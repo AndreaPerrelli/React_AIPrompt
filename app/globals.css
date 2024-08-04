@@ -47,7 +47,7 @@ body {
 .main-bg {
   background: linear-gradient(
     135deg,
-    #ff8c00 25%, /* Gradient color stop at 25% */
-    #ffd700 75% /* Gradient color stop at 75% */
+    #0066B2 25%, /* Gradient color stop at 25% */
+    #4666FF 75% /* Gradient color stop at 75% */
   );
 }
