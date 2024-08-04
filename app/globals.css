@@ -1,33 +1,53 @@
+/* globals.css */
+
+/* Import Tailwind CSS base styles */
 @tailwind base;
+
+/* Import Tailwind CSS component styles */
 @tailwind components;
+
+/* Import Tailwind CSS utility styles */
 @tailwind utilities;
 
+/* Define CSS custom properties for colors */
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  --foreground-rgb: 0, 0, 0; /* Default foreground color */
+  --background-start-rgb: 214, 219, 220; /* Default gradient start color */
+  --background-end-rgb: 255, 255, 255; /* Default gradient end color */
 }
 
+/* Media query for dark mode preference */
 @media (prefers-color-scheme: dark) {
   :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
+    --foreground-rgb: 255, 255, 255; /* Dark mode foreground color */
+    --background-start-rgb: 0, 0, 0; /* Dark mode gradient start color */
+    --background-end-rgb: 0, 0, 0; /* Dark mode gradient end color */
   }
 }
 
+/* Apply colors to body element */
 body {
-  color: rgb(var(--foreground-rgb));
+  color: rgb(var(--foreground-rgb)); /* Set text color using custom property */
   background: linear-gradient(
       to bottom,
       transparent,
       rgb(var(--background-end-rgb))
     )
-    rgb(var(--background-start-rgb));
+    rgb(var(--background-start-rgb)); /* Set background gradient using custom properties */
 }
 
+/* Define custom utility classes in Tailwind CSS */
 @layer utilities {
   .text-balance {
-    text-wrap: balance;
+    text-wrap: balance; /* Add balanced text wrapping */
   }
+}
+
+/* Custom background gradient for elements with the 'main-bg' class */
+.main-bg {
+  background: linear-gradient(
+    135deg,
+    #ff8c00 25%, /* Gradient color stop at 25% */
+    #ffd700 75% /* Gradient color stop at 75% */
+  );
 }

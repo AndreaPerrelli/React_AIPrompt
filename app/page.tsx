@@ -1,113 +1,175 @@
-import Image from "next/image";
+/* page.tsx */
+"use client"; // Enable client-side rendering
+import { useState, useEffect, useCallback } from "react"; // Import necessary React hooks
+import { 
+  Select, 
+  MenuItem, 
+  TextField, 
+  Button, 
+  Box, 
+  Typography, 
+  List, 
+  ListItem, 
+  ListItemText, 
+  IconButton, 
+  Paper 
+} from "@mui/material"; // Import Material-UI components
+import DeleteIcon from '@mui/icons-material/Delete'; // Import delete icon
+import { useDropzone } from "react-dropzone"; // Import useDropzone hook for file drag-and-drop
 
-export default function Home() {
+const taskTypes = ['Feature', 'Fix', 'Refactor', 'Question', 'Blog', 'Others']; // Task types array
+
+// Function to get default text based on task type
+const getDefaultText = (taskType: string) => {
+  switch (taskType) {
+    case 'Fix':
+      return "You are tasked to fix a bug. Instructions are as follows:\n\n";
+    case 'Refactor':
+      return "You are tasked to do a code refactoring. Instructions are as follows:\n\n";
+    case 'Question':
+      return "You are tasked to answer a question:\n\n";
+    case 'Blog':
+      return "You are tasked to write a blog post. Instructions are as follows:\n\n";
+    case 'Others':
+      return "\n\n";
+    default:
+      return "You are tasked to implement a feature. Instructions are as follows:\n\n";
+  }
+};
+
+// Function to generate the full prompt
+const generateFullPrompt = (taskType: string, instructions: string, files: { name: string, content: string }[]) => {
+  let prompt = instructions + "\n\n";
+  prompt += "Instructions for the output format:\n";
+  prompt += "- Output code without descriptions, unless it is important.\n";
+  prompt += "- Minimize prose, comments and empty lines.\n";
+  prompt += "- Only show the relevant code that needs to be modified. Use comments to represent the parts that are not modified.\n";
+  prompt += "- Make it easy to copy and paste.\n";
+  prompt += "- Consider other possibilities to achieve the result, do not be limited by the prompt.\n\n";
+  prompt += "Code Context:\n";
+  files.forEach(file => {
+    prompt += `File: ${file.name}\n`;
+    prompt += "```\n" + file.content + "\n```\n\n";
+  });
+  return prompt;
+};
+
+// Home component
+const Home = () => {
+  const [taskType, setTaskType] = useState<string>(''); // State for selected task type
+  const [instructions, setInstructions] = useState<string>(''); // State for task instructions
+  const [files, setFiles] = useState<{ name: string, content: string }[]>([]); // State for uploaded files
+  const [prompt, setPrompt] = useState<string>(''); // State for generated prompt
+
+  // Effect to set default instructions when task type changes
+  useEffect(() => {
+    if (taskType) {
+      setInstructions(getDefaultText(taskType));
+    }
+  }, [taskType]);
+
+  // Callback function to handle file drops
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    const filePromises = acceptedFiles.map(file =>
+      file.text()
+        .then(content => ({ name: file.name, content })) // Read file content
+        .catch(error => {
+          console.error(`Error reading file ${file.name}:`, error);
+          return null;
+        })
+    );
+
+    Promise.all(filePromises)
+      .then(filesWithContent => {
+        const validFiles = filesWithContent.filter(file => file !== null) as { name: string, content: string }[];
+        setFiles(prevFiles => [...prevFiles, ...validFiles]); // Update state with valid files
+      })
+      .catch(error => console.error('Error processing files:', error));
+  }, []);
+
+  // useDropzone hook for file drag-and-drop functionality
+  const { getRootProps, getInputProps, open } = useDropzone({
+    onDrop,
+    multiple: true,
+    noClick: true,
+    noKeyboard: true,
+  });
+
+  // Callback function to remove a file
+  const removeFile = useCallback((fileName: string) => {
+    setFiles(files => files.filter(file => file.name !== fileName));
+  }, []);
+
+  // Callback function to generate the prompt
+  const generatePrompt = useCallback(() => {
+    const fullPrompt = generateFullPrompt(taskType, instructions, files);
+    setPrompt(fullPrompt); // Set the generated prompt in state
+  }, [taskType, instructions, files]);
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
+      <Paper elevation={3} className="bg-gray-900 p-6 rounded-lg text-white w-full max-w-xl">
+        <Typography variant="h4" gutterBottom>AI Prompt</Typography>
+        <Select
+          value={taskType}
+          onChange={(e) => setTaskType(e.target.value as string)}
+          displayEmpty
+          fullWidth
+          margin="dense"
+          className="text-white"
+        >
+          <MenuItem value="" disabled>Select Task Type</MenuItem>
+          {taskTypes.map((type) => (
+            <MenuItem key={type} value={type}>{type}</MenuItem>
+          ))}
+        </Select>
+        <TextField
+          label="Task Instructions"
+          multiline
+          rows={4}
+          value={instructions}
+          onChange={(e) => setInstructions(e.target.value)}
+          fullWidth
+          margin="normal"
+          InputLabelProps={{ className: 'text-white' }}
+          InputProps={{ className: 'text-white' }}
         />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
+        <Box {...getRootProps()} p={2} border="1px dashed grey" textAlign="center" margin="normal">
+          <input {...getInputProps()} />
+          <Typography>Drag & drop files or folders here, or click to select files</Typography>
+          <Button onClick={open} variant="contained" color="primary">Select Files</Button>
+        </Box>
+        {files.length > 0 && (
+          <Box mt={2} p={2} border="1px solid grey">
+            <Typography variant="h6">Selected Files</Typography>
+            <List>
+              {files.map((file, index) => (
+                <ListItem key={index} secondaryAction={
+                  <IconButton edge="end" aria-label="delete" onClick={() => removeFile(file.name)}>
+                    <DeleteIcon className="text-white" />
+                  </IconButton>
+                }>
+                  <ListItemText primary={file.name} className="text-white" />
+                </ListItem>
+              ))}
+            </List>
+          </Box>
+        )}
+        <Button variant="contained" color="primary" onClick={generatePrompt} fullWidth>
+          Generate Prompt
+        </Button>
+        {prompt && (
+          <Box mt={3} p={2} border="1px solid grey">
+            <Typography variant="h6">Generated Prompt</Typography>
+            <Typography style={{ whiteSpace: 'pre-wrap' }}>{prompt}</Typography>
+            <Button onClick={() => navigator.clipboard.writeText(prompt)} variant="contained" color="secondary">
+              Copy
+            </Button>
+          </Box>
+        )}
+      </Paper>
     </main>
   );
-}
+};
+
+export default Home;
