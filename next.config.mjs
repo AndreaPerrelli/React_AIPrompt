@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     output: 'export',
-    // Additional configuration can be added here if needed
+    basePath: '/WebAIPrompt', // Replace with your repository name
+    assetPrefix: '/WebAIPrompt/', // Replace with your repository name
   };
-
-export default nextConfig;
+  
+  export default nextConfig;
+  
